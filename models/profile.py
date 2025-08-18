@@ -30,3 +30,5 @@ class Profile:
     eco_friendly: Optional[bool] = None
     car_condition_preference: Optional[str] = "both"  # "new" | "used" | "both"
     memberLevel: Optional[str] = None
+    engine_type: Optional[str] = None  # for recommender
+    campaign: Optional[str] = None  # for strategy context

@@ -9,11 +9,11 @@ Content-Type: application/json
     "cash_budget": 20000,
     "monthly_capacity": 500
   },
-  "habit": "I usually drive 30 miles a day in the city with occasional weekend trips",
+  "habit": "I drive daily in urban areas, prefer eco-friendly vehicles, and need space for a small family.",
   "colors": ["red", "black", "white"],
   "age": 28,
-  "family_size": 3,
-  "driving_experience": 6,
+  "family_size": 4,
+  "driving_experience": 10,
   "accident_history": false,
   "annual_mileage": 12000,
   "parking": "garage",
@@ -21,11 +21,13 @@ Content-Type: application/json
   "brand_preference": ["Honda", "Tesla"],
   "body_type": ["sedan", "EV"],
   "features": ["autopilot", "bluetooth", "backup camera"],
-  "safety_priority": "high",
-  "environmental_priority": "high",
+  "safety_priority": "very high",
+  "environmental_priority": "very high",
   "eco_friendly": true,
-  "car_condition_preference": "both",
-  "memberLevel": "premium"
+  "car_condition_preference": "new",
+  "memberLevel": "premium",
+  "engine_type": "Hybrid",
+  "campaign": "clearance sale"
 }
 
 
