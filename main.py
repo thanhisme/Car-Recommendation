@@ -161,7 +161,8 @@ def filter_and_calculate_tco(profile, semantic_result, finance_result):
 # -----------------------------
 @app.post("/recommend")
 def recommend_cars(profile: Profile):
-    semantic_result = semantic_search_from_profile(profile, useMock=True)
+    semantic_result = semantic_search_from_profile(profile, useMock=False)
+    return semantic_result
     finance_result = get_finance_offers(profile)
     car_recommendations = filter_and_calculate_tco(profile, semantic_result, finance_result)
     return {

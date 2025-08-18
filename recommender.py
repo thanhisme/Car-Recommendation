@@ -4,19 +4,22 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
-from sentence_transformers import SentenceTransformer, util
+import openai
 from business_signals import attach_business_signals
 from utils.vector_utils import minmax_scale, safe_float
 from configs.strategy_config import STRATEGIES
 from models.car_hit import CarHit
+from sentence_transformers import util
+
+# Set up your OpenAI API key
+openai.api_key = "key-placeholder"  # Replace with your actual OpenAI API key
 
 class HybridCarRecommender:
     def __init__(self, csv_path: str):
         import pandas as pd
         self.df = attach_business_signals(pd.read_csv(csv_path))
-        self.model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-        self.dim = 384
-        self.qdrant = QdrantClient(location=":memory:")
+        self.dim = 1536  # OpenAI's text-embedding-ada-002 has a 1536 dimensional output
+        self.qdrant = QdrantClient(path="./qdrant_storage")
         self._init_collection()
         self._upsert()
 
@@ -37,19 +40,28 @@ class HybridCarRecommender:
         ]
         return " | ".join([p for p in parts if p])
 
+    def _get_openai_embedding(self, text: str) -> List[float]:
+        """Get embedding from OpenAI's API."""
+        response = openai.embeddings.create(
+            model="text-embedding-ada-002",
+            input=text
+        )
+        # Extract the embedding from the response
+        return response.data[0].embedding
+
     def _upsert(self):
         points = []
         for _, row in self.df.iterrows():
             text = self._row_text(row)
-            vec = self.model.encode(text).tolist()
+            vec = self._get_openai_embedding(text)  # Get OpenAI embedding
             payload = row.to_dict()
             points.append(PointStruct(id=str(uuid.uuid4()), vector=vec, payload=payload))
         self.qdrant.upsert(collection_name="cars", points=points)
-        print(f"✅ Upserted {len(points)} cars into Qdrant (:memory:)")
+        print(f"✅ Upserted {len(points)} cars into Qdrant (:path:)")
 
     def retrieve(self, user_query: str, top_k: int = 15,
                  filters: Optional[Dict[str, Any]] = None) -> List[CarHit]:
-        qvec = self.model.encode(user_query).tolist()
+        qvec = self._get_openai_embedding(user_query)  # Get OpenAI embedding for the query
         qfilter = None
         if filters:
             must = []
@@ -102,7 +114,7 @@ class HybridCarRecommender:
         desc = car.get("Description", "") or ""
         meta = f"{car.get('EngineType','')} {car.get('BodyType','')} {car.get('UseCase','')}"
         txt = f"{desc} | {meta}".strip(" |")
-        car_vec = self.model.encode(txt, convert_to_tensor=True)
+        car_vec = self._get_openai_embedding(txt)  # Get OpenAI embedding for the car description
         sim = float(util.cos_sim(pref_text_vec, car_vec).item())
         return sim
 
@@ -138,7 +150,7 @@ class HybridCarRecommender:
         wR, wP, wB = cfg["wR"], cfg["wP"], cfg["wB"]
         gamma_rule = cfg["gamma_rule"]
         business_cfg = business_cfg or {}
-        pref_vec = self.model.encode(pref_text, convert_to_tensor=True)
+        pref_vec = self._get_openai_embedding(pref_text)  # Get OpenAI embedding for preferences
         for h in hits:
             h.reasons = []
             h.rule_score = self.rule_personal_score(h.payload, user_pref, h.reasons)
