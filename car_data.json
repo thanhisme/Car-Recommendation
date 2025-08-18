@@ -1,0 +1,41 @@
+[
+	{
+		"year": 2022,
+		"make": "Honda",
+		"model": "Civic",
+		"trim": "EX Sedan",
+		"base_price": 21000,
+		"fuel_efficiency": 33,
+		"insurance": 1200,
+		"depreciation_rate": 0.15,
+		"fuel_type": "EV",
+		"kwh_per_mile": 0.25,
+		"maintenance_base": 400
+	},
+	{
+		"year": 2023,
+		"make": "Tesla",
+		"model": "Model 3",
+		"trim": "Long Range AWD",
+		"base_price": 38000,
+		"fuel_efficiency": 120,
+		"insurance": 1800,
+		"depreciation_rate": 0.2,
+		"fuel_type": "EV",
+		"kwh_per_mile": 0.25,
+		"maintenance_base": 600
+	},
+	{
+		"year": 2021,
+		"make": "Honda",
+		"model": "Accord",
+		"trim": "Sport Special Edition",
+		"base_price": 25000,
+		"fuel_efficiency": 30,
+		"insurance": 1300,
+		"depreciation_rate": 0.16,
+		"fuel_type": "EV",
+		"kwh_per_mile": 0.25,
+		"maintenance_base": 450
+	}
+]
