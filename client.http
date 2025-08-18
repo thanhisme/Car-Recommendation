@@ -13,6 +13,8 @@ Content-Type: application/json
   "colors": ["red", "black", "white"],
   "age": 28,
   "family_size": 3,
+  "driving_experience": 6,
+  "accident_history": false,
   "annual_mileage": 12000,
   "parking": "garage",
   "cargo_need": "medium",
@@ -22,10 +24,8 @@ Content-Type: application/json
   "safety_priority": "high",
   "environmental_priority": "high",
   "eco_friendly": true,
-  "driving_experience": 6,
-  "accident_history": false,
-  "customer_segment": "premium",
-  "car_condition_preference": "both"
+  "car_condition_preference": "both",
+  "memberLevel": "premium"
 }
 
 

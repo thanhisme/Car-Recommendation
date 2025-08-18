@@ -1,3 +1,10 @@
 fastapi
 uvicorn
 pydantic
+helpers
+pandas
+qdrant-client
+langchain
+langchain-community
+sentence-transformers
+huggingface-hub
