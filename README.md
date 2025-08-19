@@ -58,3 +58,110 @@ Content-Type: application/json
   "campaign": "clearance sale"
 }
 ```
+
+## Example Response
+
+```json
+{
+	"summary": "We found cars that match your preferences, budget, and lifestyle.",
+	"your_profile": {
+		"location": "CA, 94105",
+		"budget": {
+			"cash_budget": 20000.0,
+			"monthly_capacity": 500.0,
+			"payment_method": "loan"
+		},
+		"eco_friendly": true,
+		"preferences_from_semantic_search": [
+			{
+				"year": 2022,
+				"make": "Honda",
+				"model": "Civic",
+				"trim": "EX Sedan",
+				"reason": "Phù hợp với ngân sách, tiết kiệm nhiên liệu và kiểu dáng sedan"
+			},
+			{
+				"year": 2023,
+				"make": "Tesla",
+				"model": "Model 3",
+				"trim": "Long Range AWD",
+				"reason": "Xe điện, có Autopilot, thân thiện môi trường, phù hợp với nhu cầu EV"
+			},
+			{
+				"year": 2021,
+				"make": "Honda",
+				"model": "Accord",
+				"trim": "Sport Special Edition",
+				"reason": "Không gian rộng rãi cho gia đình, nhiều tính năng an toàn"
+			}
+		]
+	},
+	"finance_info": {
+		"payment_capacity": "You can afford cars up to $20000.0 in cash or around $500.0/month if financed."
+	},
+	"recommended_cars": [
+		{
+			"year": 2022,
+			"make": "Honda",
+			"model": "Civic",
+			"trim": "EX Sedan",
+			"color": "Blue",
+			"reason": "Phù hợp với ngân sách, tiết kiệm nhiên liệu và kiểu dáng sedan + phù hợp với khả năng tài chính (voucher áp dụng: 0$)",
+			"tco_total": 50179.4875248,
+			"breakdown": {
+				"initial_cost": {
+					"value": 23122.5,
+					"explanation": {
+						"base_price": 21000,
+						"tax": 1522.5,
+						"registration_fee": 600,
+						"applied_voucher": -0.0
+					}
+				},
+				"energy_cost": {
+					"value": 4200.000000000001,
+					"explanation": {
+						"annual_mileage": 12000,
+						"kwh_per_mile": 0.25,
+						"electricity_price": 0.28,
+						"years": 5
+					}
+				},
+				"insurance": {
+					"value": 4725.0,
+					"explanation": {
+						"price": 21000,
+						"insurance_rate": 0.045,
+						"years": 5
+					}
+				},
+				"maintenance": {
+					"value": 3110.5298927999993,
+					"explanation": {
+						"base": 480,
+						"escalation": 1.13,
+						"years": 5
+					}
+				},
+				"parking": {
+					"value": 10146.767328000002,
+					"explanation": {
+						"base": 1800,
+						"escalation": 1.06,
+						"years": 5
+					}
+				},
+				"toll": {
+					"value": 4874.690304000001,
+					"explanation": {
+						"base": 900,
+						"escalation": 1.04,
+						"years": 5
+					}
+				}
+			},
+			"available_vouchers": []
+		}
+	]
+}
+```
