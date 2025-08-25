@@ -165,3 +165,11 @@ Content-Type: application/json
 	]
 }
 ```
+
+## Kiến trúc
+
+- **server.py**: Xử lý request, trả về kết quả gợi ý theo schema chuẩn.
+- **models/profile.py**: Định nghĩa cấu trúc hồ sơ khách hàng.
+- **recommender.py**: Logic gợi ý xe, tính điểm và xếp hạng.
+- **configs/strategy_config.py**: Định nghĩa các chiến dịch và chiến lược gợi ý.
+- **utils/vector_utils.py**: Hỗ trợ tính toán vector, cosine similarity.

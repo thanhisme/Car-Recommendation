@@ -1,0 +1,25 @@
+{
+	"suggested_cars": [
+		{
+			"year": 2022,
+			"make": "Honda",
+			"model": "Civic",
+			"trim": "EX Sedan",
+			"reason": "Phù hợp với ngân sách, tiết kiệm nhiên liệu và kiểu dáng sedan"
+		},
+		{
+			"year": 2023,
+			"make": "Tesla",
+			"model": "Model 3",
+			"trim": "Long Range AWD",
+			"reason": "Xe điện, có Autopilot, thân thiện môi trường, phù hợp với nhu cầu EV"
+		},
+		{
+			"year": 2021,
+			"make": "Honda",
+			"model": "Accord",
+			"trim": "Sport Special Edition",
+			"reason": "Không gian rộng rãi cho gia đình, nhiều tính năng an toàn"
+		}
+	]
+}

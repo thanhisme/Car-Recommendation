@@ -3,31 +3,5 @@ Content-Type: application/json
 
 {
   "state": "CA",
-  "zip": "94105",
-  "finance": {
-    "payment_method": "loan",
-    "cash_budget": 20000,
-    "monthly_capacity": 500
-  },
-  "habit": "I drive daily in urban areas, prefer eco-friendly vehicles, and need space for a small family.",
-  "colors": ["red", "black", "white"],
-  "age": 28,
-  "family_size": 4,
-  "driving_experience": 10,
-  "accident_history": false,
-  "annual_mileage": 12000,
-  "parking": "garage",
-  "cargo_need": "medium",
-  "brand_preference": ["Honda", "Tesla"],
-  "body_type": ["sedan", "EV"],
-  "features": ["autopilot", "bluetooth", "backup camera"],
-  "safety_priority": "very high",
-  "environmental_priority": "very high",
-  "eco_friendly": true,
-  "car_condition_preference": "new",
-  "memberLevel": "premium",
-  "engine_type": "Hybrid",
-  "campaign": "clearance sale"
+  "color": "Green"
 }
-
-
