@@ -26,16 +26,16 @@ class VehicleQueryBuilder:
             must_filters.append(FieldCondition(key="condition", match=MatchValue(value=profile.car_condition_preference)))
 
         if profile.finance:
-            delta = 500
+            delta = 1000
             if profile.finance.payment_method == "cash" and profile.finance.cash_budget is not None:
-                min_price = max(0, profile.finance.cash_budget - delta)
+                min_price = 0
                 max_price = profile.finance.cash_budget + delta
                 must_filters.append(FieldCondition(
                     key="price",
                     range=Range(gte=min_price, lte=max_price)  # Dùng Range thay vì MatchValue dict
                 ))
             elif profile.finance.payment_method in ["loan", "lease"] and profile.finance.monthly_capacity is not None:
-                min_payment = max(0, profile.finance.monthly_capacity - delta)
+                min_payment = 0
                 max_payment = profile.finance.monthly_capacity + delta
                 must_filters.append(FieldCondition(
                     key="monthly_payment",

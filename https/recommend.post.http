@@ -1,0 +1,11 @@
+POST http://127.0.0.1:8000/recommend
+Content-Type: application/json
+
+{
+  "state": "NY",
+  "colors": ["dark color"],
+  "finance": {
+    "payment_method": "cash",
+    "budget": 38000
+  }
+}

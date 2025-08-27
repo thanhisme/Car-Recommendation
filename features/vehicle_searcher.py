@@ -13,28 +13,15 @@ class VehicleSearcher:
 
     def search(self, profile: Profile, strategy_name: str, business_cfg_override: dict = None, top_k: int = 10):
         query_text, qfilter = VehicleQueryBuilder.build(profile)
+        print("🔍 Query text:", query_text)
+        print("🔍 Query filter:", qfilter)
         business_cfg = StrategyConfigManager.get_business_config(strategy_name, business_cfg_override)
 
         query_emb = self.openai_manager.get_embedding(query_text)
         hits_raw = self.qdrant_manager.search(query_vector=query_emb, top_k=top_k, query_filter=qfilter)
         
-        # Convert hits to vehicles list
-        vehicles = [
-            {
-                "id": h.id,
-                "year": h.payload.get("year"),
-                "make": h.payload.get("make"),
-                "model": h.payload.get("model"),
-                "trim": h.payload.get("trim"),
-                "color": h.payload.get("color"),
-                "zip": h.payload.get("zip"),
-                "price": h.payload.get("price"),
-                "reason": f"Vector similarity score: {h.score:.3f}"
-            } for h in hits_raw
-        ]
-        
-        # Use LLM rerank
-        reranked_vehicles = self._llm_rerank(vehicles, profile, strategy_name, business_cfg)
+        # Use LLM rerank with full raw hits
+        reranked_vehicles = self._llm_rerank(hits_raw, profile, strategy_name, business_cfg)
         
         # Convert back to original format
         return [
@@ -49,16 +36,22 @@ class VehicleSearcher:
             } for v in reranked_vehicles
         ]
     
-    def _llm_rerank(self, vehicles: list, profile: Profile, strategy_name: str, strategy_conf: dict):
+    def _llm_rerank(self, hits_raw: list, profile: Profile, strategy_name: str, strategy_conf: dict):
         """
         Rerank vehicles using LLM based on user profile and business strategy.
         """
         
-        # Convert vehicles to context string
-        context = "\n".join([
-            f"- {v['year']} {v['make']} {v['model']} {v['trim']} ({v['color']}) - ${v.get('price', 'N/A')} - {v.get('reason', 'No reason provided')}"
-            for v in vehicles
-        ])
+        # Convert full hits to JSON context (id, score, full payload)
+        full_hits_context = [
+            {
+                "id": getattr(h, "id", None),
+                "score": getattr(h, "score", None),
+                "payload": getattr(h, "payload", None)
+            }
+            for h in hits_raw
+        ]
+        context = json.dumps(full_hits_context, ensure_ascii=False)
+        print("\n\n\n🔍 Rerank context:", context)
         
         response = self.openai_manager.chat_completion(
             messages=[
@@ -69,15 +62,15 @@ class VehicleSearcher:
                 Chiến lược doanh nghiệp đang dùng: {strategy_name}
                 Cấu hình strategy: {strategy_conf}
 
-                Danh sách xe tìm thấy (đã qua filter): 
+                Danh sách xe tìm thấy (đầy đủ payload, đã qua filter): 
                 {context}
 
-                Hãy chọn ra xe phù hợp nhất với profile này, 
+                Hãy chọn ra nhiều xe! phù hợp nhất với profile (nên chú ý thêm vào profile của người dùng) này, 
                 có cân nhắc strategy (trọng số wR, wP, wB, gamma_rule).
 
                 Trả về JSON dạng:
                 [
-                {{"id": ..., "name": "...", "reason": "..."}}
+                {{"year": "...", "make": "...", "model": "...", "trim": "...", "color": "...", "zip": "...", "score": "...","reason": "..."}}
                 ]
                 không giải thích gì thêm.
                 """}
@@ -87,26 +80,29 @@ class VehicleSearcher:
 
         try:
             raw_output = response.choices[0].message.content.strip()
-            print("🔍 Raw LLM output:", raw_output)
             if raw_output.startswith("```"):
                 raw_output = re.sub(r"^```[a-zA-Z]*\n?", "", raw_output)
                 raw_output = re.sub(r"\n?```$", "", raw_output)
             
             llm_results = json.loads(raw_output)
-            # Map LLM results back to original vehicles
-            reranked_vehicles = []
-            for llm_result in llm_results:
-                vehicle_id = llm_result.get("id")
-                # Find original vehicle by ID
-                for vehicle in vehicles:
-                    if vehicle["id"] == vehicle_id:
-                        vehicle["reason"] = llm_result.get("reason", vehicle.get("reason", "No reason provided"))
-                        reranked_vehicles.append(vehicle)
-                        break
-            return reranked_vehicles
+            print("\n\n\n✅ LLM Rerank results:", llm_results)
+            return llm_results
         except Exception as e:
             print("⚠️ Parse JSON fail:", raw_output if 'raw_output' in locals() else "No output")
             print("⚠️ Error:", str(e))
-            return vehicles  # Return original order if LLM fails
+            # Fallback: convert hits_raw to simplified vehicle list in original order
+            fallback = [
+                {
+                    "year": (getattr(h, "payload", {}) or {}).get("year"),
+                    "make": (getattr(h, "payload", {}) or {}).get("make"),
+                    "model": (getattr(h, "payload", {}) or {}).get("model"),
+                    "trim": (getattr(h, "payload", {}) or {}).get("trim"),
+                    "color": (getattr(h, "payload", {}) or {}).get("color"),
+                    "zip": (getattr(h, "payload", {}) or {}).get("zip"),
+                    "reason": f"Vector similarity score: {getattr(h, 'score', 0) if isinstance(getattr(h, 'score', 0), (int, float)) else 0:.3f}"
+                }
+                for h in hits_raw
+            ]
+            return fallback  # Return original order if LLM fails
     
 

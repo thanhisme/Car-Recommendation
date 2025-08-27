@@ -2,56 +2,126 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 
 from models.profile import Profile
+from models.finance import Finance
 from autotrader_service import AutoTraderService
 
-# Load environment variables from a .env file
+# Load environment variables from a .env file (API keys, config, etc.)
 load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Initialize the service that handles car recommendations
+# Initialize the service that handles car recommendations and TCO calculations
 service = AutoTraderService()
 
+
+def _recommend_with_profile(profile: Profile):
+    """
+    Generate vehicle recommendations based on the provided user profile.
+
+    Args:
+        profile (Profile): User profile containing preferences, finance info, and state.
+
+    Returns:
+        list[dict]: A list of recommended vehicles matching the profile.
+    """
+    return service.recommend_with_profile(profile)
+
+
+def _build_default_profile(state: str) -> Profile:
+    """
+    Build a default user profile based only on the given state.
+
+    Args:
+        state (str): The U.S. state code (e.g., 'CA', 'TX').
+
+    Returns:
+        Profile: A default profile object with broad search parameters.
+    """
+    return service.build_default_profile(state)
+
+
+def _vehicle_details_with_tco(vin: str, profile: Profile):
+    """
+    Fetch vehicle details and compute Total Cost of Ownership (TCO).
+
+    Args:
+        vin (str): The Vehicle Identification Number (VIN).
+        profile (Profile): The user's profile containing finance and state info.
+
+    Returns:
+        dict: Vehicle details including specifications and calculated TCO.
+    """
+    return service.vehicle_details_with_tco(vin, profile)
+
+
 @app.post("/recommend")
-def recommend_cars(profile: Profile):
+def recommend_vehicles(profile: Profile):
     """
-    Endpoint to recommend cars based on user's profile.
+    Recommend vehicles based on a user-provided profile.
+
+    Args:
+        profile (Profile): JSON body containing user profile fields:
+            - state (str): User's state
+            - finance (Finance): Finance info (budget, loan, etc.)
+            - habit, colors, features (optional)
+
+    Returns:
+        list[dict]: A ranked list of recommended vehicles with metadata.
     """
-    # Perform semantic search to find cars matching user's preferences
-    semantic_result = service.semantic_search_from_profile(profile, useMock=False)
+    return _recommend_with_profile(profile)
 
-    return semantic_result
-    
-    # Get available finance offers for the user
-    finance_result = service.get_finance_info(profile)
 
-    # Filter cars and calculate Total Cost of Ownership (TCO) based on profile, semantic search, and finance info
-    filtered_cars = service.filter_cars_by_budget_and_match(profile, semantic_result, finance_result)
-    cars_with_tco = service.calculate_tco_for_cars(profile, filtered_cars)
+@app.get("/recommend/default")
+def recommend_vehicles_default(state: str):
+    """
+    Recommend vehicles using a default profile.
 
-    # Return the recommendation results
-    return {
-        "summary": "We found cars that match your preferences, budget, and lifestyle.",
-        "your_profile": {
-            # Show user's location (state + zip if available)
-            "location": f"{profile.state}, {getattr(profile, 'zip', '')}",
-            "budget": {
-                # User's cash budget and monthly capacity for financing
-                "cash_budget": profile.finance.cash_budget,
-                "monthly_capacity": profile.finance.monthly_capacity,
-                "payment_method": profile.finance.payment_method
-            },
-            # Indicate if user prefers eco-friendly vehicles
-            "eco_friendly": getattr(profile, 'eco_friendly', None),
-            # Suggested cars from semantic search
-            "preferences_from_semantic_search": semantic_result["suggested_cars"]
-        },
-        "finance_info": {
-            # Simple human-readable message about user's payment capacity
-            "payment_capacity": f"You can afford cars up to ${profile.finance.cash_budget} in cash "
-                                f"or around ${profile.finance.monthly_capacity}/month if financed.",
-        },
-        # List of recommended cars after filtering and TCO calculation
-        "recommended_cars": cars_with_tco,
-    }
+    The default profile:
+    - Only filters by `state`
+    - Sets finance fields to very high values (no budget restriction)
+
+    Args:
+        state (str): The U.S. state code to filter vehicles.
+
+    Returns:
+        list[dict]: A list of recommended vehicles for the given state.
+    """
+    # Build default profile with state + maximum finance capacity (broad search)
+    default_profile = Profile(
+        state=state,
+        finance=Finance(payment_method="cash", cash_budget=10**9, monthly_capacity=10**9)
+    )
+
+    return _recommend_with_profile(default_profile)
+
+
+@app.get("/vehicle/details/default/{vin}")
+def get_vehicle_details_default(vin: str, state: str):
+    """
+    Get vehicle details and TCO by VIN using a default profile derived from state.
+
+    Args:
+        vin (str): The Vehicle Identification Number.
+        state (str): The U.S. state code to apply tax/insurance rules.
+
+    Returns:
+        dict: Vehicle details enriched with TCO analysis.
+    """
+    profile = _build_default_profile(state)
+    return _vehicle_details_with_tco(vin, profile)
+
+
+@app.post("/vehicle/details")
+def get_vehicle_details(vin: str, profile: Profile):
+    """
+    Get vehicle details and TCO by VIN using a user-provided profile.
+
+    Args:
+        vin (str): The Vehicle Identification Number.
+        profile (Profile): JSON body representing user's profile.
+
+    Returns:
+        dict: Vehicle details enriched with TCO analysis.
+    """
+    return _vehicle_details_with_tco(vin, profile)

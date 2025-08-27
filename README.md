@@ -1,30 +1,70 @@
 # AutoTrader-Api: Car Recommendation System
 
-## Giới thiệu
+## Business Overview
 
-AutoTrader-Api là hệ thống API gợi ý xe ô tô thông minh, sử dụng công nghệ tìm kiếm ngữ nghĩa, vector database và các chiến lược kinh doanh để cá nhân hóa kết quả cho từng người dùng. Dự án này phù hợp cho các nền tảng thương mại điện tử ô tô, đại lý xe, hoặc các ứng dụng tư vấn mua xe.
+AutoTrader-Api is an intelligent car recommendation system that helps users find the perfect vehicle based on their personal preferences, financial situation, and specific needs. The system leverages semantic search, vector databases, and business strategies to deliver personalized vehicle recommendations.
 
-## Tính năng chính
+## Business Flow
 
-- **Gợi ý xe cá nhân hóa:** Dựa trên hồ sơ người dùng (Profile), thói quen, ngân sách, sở thích, nhu cầu sử dụng, v.v.
-- **Tìm kiếm ngữ nghĩa:** Sử dụng mô hình embedding và vector database để tìm xe phù hợp nhất với mô tả, nhu cầu thực tế.
-- **Chiến lược kinh doanh động:** Tích hợp các chiến dịch khuyến mãi, ưu đãi, ưu tiên thương hiệu/model, và các chiến lược bán hàng.
-- **Tính toán TCO (Total Cost of Ownership):** Đánh giá chi phí sở hữu xe dựa trên hồ sơ tài chính và các voucher/ưu đãi.
-- **API RESTful:** Dễ dàng tích hợp với các hệ thống frontend hoặc ứng dụng khác.
+1. **User Profile Creation**
 
-## Hướng dẫn sử dụng
+   - User provides information about their location, budget, driving habits, preferences
+   - System processes this information to create a comprehensive user profile
 
-1. **Cài đặt môi trường:**
-   - Tạo virtualenv và cài đặt các package từ `requirements.txt`.
-2. **Chạy server:**
-   - Sử dụng lệnh: `uvicorn main:app --reload`
-3. **Test API:**
-   - Sử dụng file `client.http` hoặc công cụ như Postman để gửi request tới endpoint `/recommend`.
-   - Payload cần cung cấp đầy đủ thông tin hồ sơ người dùng.
-4. **Tùy chỉnh logic:**
-   - Sửa các file trong `configs/`, `models/`, hoặc logic trong `langchain.py`/`recommender.py` để phù hợp nhu cầu thực tế.
+2. **Vehicle Recommendation Process**
 
-## Ví dụ request
+   - Semantic search matches user's needs with available vehicles
+   - Financial offers are generated based on user's budget and payment preferences
+   - Vehicles are filtered by compatibility with user's financial constraints
+   - TCO (Total Cost of Ownership) is calculated for each potential match
+   - Applicable vouchers and discounts are automatically applied
+
+3. **Vehicle Details & Analysis**
+
+   - Users can request detailed information about specific vehicles using their VIN
+   - System provides comprehensive TCO analysis including maintenance, insurance, and depreciation
+   - Comparisons between vehicles help users make informed decisions
+
+4. **Default Recommendations**
+   - For quick browsing, users can get recommendations with minimal input (just their state)
+   - These recommendations use a default profile with broad parameters
+
+## Configurable Settings
+
+### Business Strategy Configuration
+
+- **Strategy Config (`configs/strategy_config.py`)**
+  - Configure weights for different recommendation factors
+  - Set brand priorities for promotional campaigns
+  - Define business rules for vehicle scoring and ranking
+
+### Regional Settings
+
+- **Region Expense Config (`configs/region_expense_config.py`)**
+  - Configure state-specific tax rates
+  - Set insurance cost modifiers by region
+  - Define regional maintenance cost factors
+
+### Commercial Features
+
+- **Commercial Features Config (`configs/commercial_features_config.py`)**
+  - Set up promotional campaigns
+  - Configure discount voucher rules and eligibility
+  - Define member level benefits and special offers
+
+## API Endpoints
+
+### Vehicle Recommendations
+
+- `POST /recommend` - Get personalized vehicle recommendations based on detailed profile
+- `GET /recommend/default?state={state}` - Get basic recommendations filtered by state
+
+### Vehicle Details
+
+- `POST /vehicle/details` - Get detailed vehicle information with TCO by VIN and profile
+- `GET /vehicle/details/default/{vin}?state={state}` - Get vehicle details with default profile
+
+## Example Request
 
 ```http
 POST http://127.0.0.1:8000/recommend
@@ -86,18 +126,11 @@ Content-Type: application/json
 				"model": "Model 3",
 				"trim": "Long Range AWD",
 				"reason": "Xe điện, có Autopilot, thân thiện môi trường, phù hợp với nhu cầu EV"
-			},
-			{
-				"year": 2021,
-				"make": "Honda",
-				"model": "Accord",
-				"trim": "Sport Special Edition",
-				"reason": "Không gian rộng rãi cho gia đình, nhiều tính năng an toàn"
 			}
 		]
 	},
 	"finance_info": {
-		"payment_capacity": "You can afford cars up to $20000.0 in cash or around $500.0/month if financed."
+		"payment_capacity": "You can afford cars up to $20000 in cash or around $500/month if financed."
 	},
 	"recommended_cars": [
 		{
@@ -144,7 +177,7 @@ Content-Type: application/json
 					}
 				},
 				"parking": {
-					"value": 10146.767328000002,
+					"value": 10146.77,
 					"explanation": {
 						"base": 1800,
 						"escalation": 1.06,
@@ -152,7 +185,7 @@ Content-Type: application/json
 					}
 				},
 				"toll": {
-					"value": 4874.690304000001,
+					"value": 4874.69,
 					"explanation": {
 						"base": 900,
 						"escalation": 1.04,
@@ -166,10 +199,15 @@ Content-Type: application/json
 }
 ```
 
-## Kiến trúc
+## Setup & Development
 
-- **server.py**: Xử lý request, trả về kết quả gợi ý theo schema chuẩn.
-- **models/profile.py**: Định nghĩa cấu trúc hồ sơ khách hàng.
-- **recommender.py**: Logic gợi ý xe, tính điểm và xếp hạng.
-- **configs/strategy_config.py**: Định nghĩa các chiến dịch và chiến lược gợi ý.
-- **utils/vector_utils.py**: Hỗ trợ tính toán vector, cosine similarity.
+1. **Environment Setup**:
+   - Install dependencies: `pip install -r requirements.txt`
+2. **Running the API**:
+
+   - Start the server: `uvicorn main:app --reload`
+   - Access the API documentation at: `http://127.0.0.1:8000/docs`
+
+3. **Configuration Files**:
+   - Adjust business logic and regional settings in the `configs/` directory
+   - Modify vehicle scoring algorithms in the `features/` directory

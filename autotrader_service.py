@@ -22,14 +22,95 @@ class AutoTraderService:
         self.openai_manager = OpenAIClientManager(api_key="open-ai-key")
         self.qdrant_manager = QdrantClientManager()
         
-        # Initialize sample vehicle data and upsert to Qdrant
+        # Initialize sample vehicle data and upsert to Qdrant only if empty
         self._initialize_vehicle_data()
     
+    def recommend_with_profile(self, profile: Profile):
+        """
+        Shared recommendation flow for a given profile:
+        - semantic search → finance → budget/match filter → TCO → response dict
+        """
+        semantic_result = self.semantic_search_from_profile(profile, useMock=False)
+        finance_result = self.get_finance_info(profile)
+        filtered_vehicles = self.filter_vehicles_by_budget_and_match(profile, semantic_result, finance_result)
+        vehicles_with_tco = self.calculate_tco_for_vehicles(profile, filtered_vehicles)
+
+        return {
+            "summary": "We found vehicles that match your preferences, budget, and lifestyle.",
+            "your_profile": {
+                "location": f"{profile.state}, {getattr(profile, 'zip', '')}",
+                "budget": {
+                    "cash_budget": profile.finance.cash_budget if profile.finance else None,
+                    "monthly_capacity": profile.finance.monthly_capacity if profile.finance else None,
+                    "payment_method": profile.finance.payment_method if profile.finance else None
+                },
+                "preferences_from_semantic_search": semantic_result["suggested_vehicles"]
+            },
+            "finance_info": {
+                "payment_capacity": f"You can afford vehicles up to ${profile.finance.cash_budget} in cash "
+                                     f"or around ${profile.finance.monthly_capacity}/month if financed."
+                if profile.finance else None,
+            },
+            "recommended_vehicles": vehicles_with_tco,
+        }
+
+    def build_default_profile(self, state: str) -> Profile:
+        from models.finance import Finance
+        return Profile(
+            state=state,
+            finance=Finance(payment_method="cash", cash_budget=10**9, monthly_capacity=10**9)
+        )
+
+    def vehicle_details_with_tco(self, vin: str, profile: Profile):
+        """
+        Look up a vehicle by VIN (mapped to id in demo data) and compute TCO using the profile.
+        """
+        vehicles = get_vehicles_from_db()
+        vehicle = next((v for v in vehicles if str(v.id) == str(vin)), None)
+        if not vehicle:
+            return {"error": "Vehicle not found"}
+
+        finance_result = self.get_finance_info(profile)
+        discount_vouchers = get_discount_vouchers(
+            finance_result.get("special_offers", []),
+            vehicle,
+            vehicle.year,
+            getattr(profile, "memberLevel", None)
+        )
+        discount_voucher = discount_vouchers[0] if discount_vouchers else None
+
+        calc = TCOCalculator(profile)
+        tco_info = calc.calculate_tco(vehicle=vehicle, voucher=discount_voucher)
+
+        details = {
+            "id": vehicle.id,
+            "year": vehicle.year,
+            "make": vehicle.make,
+            "model": vehicle.model,
+            "trim": vehicle.trim,
+            "color": getattr(vehicle, "color", None),
+            "state": getattr(vehicle, "state", None),
+            "zip": getattr(vehicle, "zip", None),
+            "engine_type": getattr(vehicle, "engine_type", None),
+            "body_type": getattr(vehicle, "body_type", None),
+            "price": getattr(vehicle, "price", None) or getattr(vehicle, "base_price", None),
+            "base_price": getattr(vehicle, "base_price", None),
+        }
+        details.update(tco_info)
+        return details
     def _initialize_vehicle_data(self):
         """
         Initialize sample vehicle data and upsert to Qdrant database.
         This is done once during service initialization.
         """
+        # Skip if data already present
+        try:
+            if self.qdrant_manager.collection_has_data():
+                print("🔍 Vehicle data already present in Qdrant")
+                return
+        except Exception:
+            pass
+
         vehicles = load_raw_vehicles()
         
         # Insert vehicles into Qdrant with embeddings
